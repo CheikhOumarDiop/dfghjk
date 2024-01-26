@@ -1,0 +1,227 @@
+
+// Creation du tableau en 2 dimensions
+const table = document.getElementById("myTable");
+let tableau2D = [
+    ['m','m','m','m','m','m','m','m','m','m','m','m','m','d','m','m','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','s','s','s','m','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','s','s','s','s','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','s','s','s','s','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','s','d','t','s','s','s','s','s','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','t','s','s','s','s','s','s','s','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','s','s','s','s','s','s','s','t','s','s','s','s','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','s','s','d','s','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','m','t','s','m','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','s','s','s','s','s','s','s','s','s','s','s','m','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','d','s','t','s','s','d','s','s','s','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','s','s','s','s','s','s','s','m','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','s','s','s','j','s','s','t','m','m','m','m','m','m','m'],
+    ['m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m','m'],
+];
+
+let score = 0;
+let playerRow = 13;
+let playerCol = 13;
+
+// Fonction pour afficher la grille
+function afficherTableau() {
+    for (let i = 0; i < tableau2D.length; i++) {
+        let row = document.createElement("tr");
+        for (let j = 0; j < tableau2D[i].length; j++) {
+            let cell = document.createElement("td");
+
+            // Vérifie le contenu de la cellule et n'affiche rien s'il s'agit de 'm' ou 's'
+            if (tableau2D[i][j] !== 'm' && tableau2D[i][j] !== 's'
+                && tableau2D[i][j] !== 'd' && tableau2D[i][j] !== 'j'
+                && tableau2D[i][j] !== 't') {
+                cell.textContent = tableau2D[i][j];
+            }
+
+            // Ajoutez une classe CSS en fonction du contenu de la cellule
+            if (tableau2D[i][j] === 'm') {
+                cell.classList.add('m');
+            } else if (tableau2D[i][j] === 's') {
+                cell.classList.add('s');
+            } else if (tableau2D[i][j] === 'd') {
+                cell.classList.add('d');
+            } else if (tableau2D[i][j] === 'j') {
+                cell.classList.add('j');
+            } else if (tableau2D[i][j] === 't') {
+                cell.classList.add('t');
+            }
+
+            row.appendChild(cell);
+        }
+        table.appendChild(row);
+    }
+}
+
+// Fonction pour vérifier si la partie est gagnée
+function checkWinCondition() {
+    for (let i = 0; i < tableau2D.length; i++) {
+        for (let j = 0; j < tableau2D[i].length; j++) {
+            if (tableau2D[i][j] === 't') {
+                return false; // Il reste encore au moins un trésor
+            }
+        }
+    }
+    return true; // Tous les trésors ont été ramassés
+}
+
+// Fonction pour vérifier si la partie est perdue
+function checkLossCondition() {
+    return tableau2D[playerRow][playerCol] === 'd'; // Le joueur est sur la même cellule qu'un monstre
+}
+
+// Fonction pour déplacer le joueur
+function movePlayer(direction) {
+    let newRow = playerRow;
+    let newCol = playerCol;
+
+    if (direction === 'up') newRow--;
+    else if (direction === 'down') newRow++;
+    else if (direction === 'left') newCol--;
+    else if (direction === 'right') newCol++;
+
+    // Vérifier si le déplacement est valide (pas en dehors de la grille ni sur un mur)
+    if (newRow >= 0 && newRow < tableau2D.length && newCol >= 0 && newCol < tableau2D[0].length) {
+        if (tableau2D[newRow][newCol] !== 'm') {
+            // Vérifier si le joueur a récupéré un trésor
+            if (tableau2D[newRow][newCol] === 't') {
+                score++;
+                document.getElementById("score").textContent = "Score: " + score;
+            }
+
+            // Mettre à jour la position du joueur dans le tableau
+            tableau2D[playerRow][playerCol] = 's';
+            tableau2D[newRow][newCol] = 'j';
+
+            // Mettre à jour la position du joueur dans l'affichage
+            let playerCell = table.rows[playerRow].cells[playerCol];
+            playerCell.classList.remove('j');
+            playerCell.classList.add('s');
+
+            let newPlayerCell = table.rows[newRow].cells[newCol];
+            newPlayerCell.classList.remove('s');
+            newPlayerCell.classList.add('j');
+
+            // Mettre à jour les variables de position du joueur
+            playerRow = newRow;
+            playerCol = newCol;
+
+            // Déplacer les monstres après que le joueur ait bougé
+            moveMonsters();
+
+            // Vérifier si la partie est gagnée (tous les trésors ont été ramassés)
+            if (checkWinCondition()) {
+                alert("La partie est gagnée !");
+                // Empêcher le joueur de bouger après avoir gagné
+                document.removeEventListener("keydown", moveListener);
+                return;
+            }
+
+            // Vérifier si la partie est perdue (le joueur a rencontré un monstre)
+            if (checkLossCondition()) {
+                alert("La partie est terminée !");
+                // Empêcher le joueur de bouger après avoir perdu
+                document.removeEventListener("keydown", moveListener);
+                return;
+            }
+        }
+    }
+}
+
+// Fonction pour déplacer les monstres
+function moveMonsters() {
+    for (let i = 0; i < tableau2D.length; i++) {
+        for (let j = 0; j < tableau2D[i].length; j++) {
+            if (tableau2D[i][j] === 'd') {
+                // Déplacement aléatoire : gauche/droite ou haut/bas
+                const randomDirection = Math.random() < 0.5 ? 'horizontal' : 'vertical';
+                let newRow = i;
+                let newCol = j;
+
+                if (randomDirection === 'horizontal') {
+                    newCol += Math.random() < 0.5 ? -1 : 1;
+                } else {
+                    newRow += Math.random() < 0.5 ? -1 : 1;
+                }
+
+                // Vérifier si le déplacement est valide (pas en dehors de la grille ni sur un mur)
+                if (newRow >= 0 && newRow < tableau2D.length && newCol >= 0
+                    && newCol < tableau2D[0].length && tableau2D[newRow][newCol] !== 'm') {
+                    // Mettre à jour la position du monstre dans le tableau
+                    tableau2D[i][j] = 's';
+                    tableau2D[newRow][newCol] = 'd';
+
+                    // Mettre à jour la position du monstre dans l'affichage
+                    let monsterCell = table.rows[i].cells[j];
+                    monsterCell.classList.remove('d');
+                    monsterCell.classList.add('s');
+
+                    let newMonsterCell = table.rows[newRow].cells[newCol];
+                    newMonsterCell.classList.remove('s');
+                    newMonsterCell.classList.add('d');
+                }
+            }
+        }
+    }
+}
+
+// Fonction pour initialiser les positions des monstres
+function initializeMonsters() {
+    // ... (write code to initialize the positions of monsters in the 2D array) ...
+    // Example:
+    // tableau2D[2][3] = 'd'; // Monster at row 2, column 3
+    // tableau2D[7][9] = 'd'; // Another monster at row 7, column 9
+}
+
+// Fonction pour initialiser les positions des trésors
+function initializeTreasures() {
+    // ... (write code to initialize the positions of treasures in the 2D array) ...
+    // Example:
+    // tableau2D[5][12] = 't'; // Treasure at row 5, column 12
+    // tableau2D[10][5] = 't'; // Another treasure at row 10, column 5
+}
+
+// Gestionnaire d'événement pour le bouton "Restart"
+document.getElementById("resetButton").addEventListener("click", function() {
+    // Réinitialiser les variables du jeu
+    score = 0;
+    document.getElementById("score").textContent = "Score: " + score;
+
+    // Réinitialiser la position du joueur
+    playerRow = 13;
+    playerCol = 13;
+
+    // Réinitialiser la position des monstres
+    initializeMonsters();
+
+    // Réinitialiser la position des trésors
+    initializeTreasures();
+
+    // Réafficher la grille mise à jour
+    afficherTableau();
+
+    // Ré-ajouter l'écouteur d'événements pour les touches fléchées
+    document.addEventListener("keydown", moveListener);
+});
+
+// Ajouter un gestionnaire d'événements pour les touches fléchées
+let moveListener = function(event) {
+    if (event.key === "ArrowUp") {
+        movePlayer("up");
+    } else if (event.key === "ArrowDown") {
+        movePlayer("down");
+    } else if (event.key === "ArrowLeft") {
+        movePlayer("left");
+    } else if (event.key === "ArrowRight") {
+        movePlayer("right");
+    }
+};
+
+document.addEventListener("keydown", moveListener);
+
+// Initialiser le jeu
+initializeMonsters();
+initializeTreasures();
+afficherTableau();
